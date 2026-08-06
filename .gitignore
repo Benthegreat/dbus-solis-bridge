@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# dbus-solis local configuration
+config.json
+*.local.json
+
+# VS Code workspace
+.vscode/
+
+# macOS
+.DS_Store
+
+# Venus OS test artifacts
+logs/
