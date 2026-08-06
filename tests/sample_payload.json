@@ -1,0 +1,61 @@
+{
+  "connected": true,
+  "vebus": {
+    "state": 9,
+    "mode": 3,
+    "vebus_error": 0,
+    "soc": 96.0,
+    "active_input": 0,
+    "dc": {
+      "voltage": 53.4,
+      "current": 16.1,
+      "power": 859.0
+    },
+    "grid": {
+      "frequency": 59.97,
+      "total_power": -91.0,
+      "l1": {
+        "voltage": 123.4,
+        "current": 3.47,
+        "power": -27.0
+      },
+      "l2": {
+        "voltage": 123.5,
+        "current": 2.84,
+        "power": -42.0
+      }
+    },
+    "out": {
+      "frequency": 60.0,
+      "total_power": 760.0,
+      "l1": {
+        "voltage": 124.1,
+        "current": 4.4,
+        "power": 445.9
+      },
+      "l2": {
+        "voltage": 123.6,
+        "current": 3.1,
+        "power": 314.1
+      }
+    }
+  },
+  "mppt": {
+    "state": 0,
+    "error_code": 0,
+    "mode": 1,
+    "pv": {
+      "voltage": 28.4,
+      "current": 0.0
+    },
+    "yield": {
+      "power": 0.0,
+      "system": 1008.0
+    },
+    "dc": {
+      "voltage": 53.4,
+      "current": 0.0,
+      "power": 0.0
+    }
+  }
+}

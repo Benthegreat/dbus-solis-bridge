@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dbus-solis"
+version = "0.1.0"
+description = "Solis to Victron D-Bus Bridge"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["dbus_solis"]
