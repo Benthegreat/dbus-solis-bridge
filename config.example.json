@@ -4,16 +4,24 @@
     "port": 1883,
     "topic": "solis/venus/update",
     "username": "",
-    "password": "",
-    "client_id": "venus-dbus-solis",
-    "keepalive": 30,
-    "tls": false,
-    "tls_insecure": false
+    "password": ""
   },
+
   "device_instances": {
     "vebus": 260,
     "mppt": 261
   },
+
+  "identity": {
+    "vebus_product_name": "Solis S6-EH2P Virtual Dual Inverter",
+    "vebus_custom_name": "Solis Dual Inverter",
+    "vebus_serial": "SOLIS-VIRTUAL-VEbus",
+
+    "mppt_product_name": "Solis Virtual External MPPT",
+    "mppt_custom_name": "Solis External MPPT",
+    "mppt_serial": "SOLIS-VIRTUAL-MPPT"
+  },
+
   "stale_timeout_seconds": 10,
   "log_level": "INFO"
 }
