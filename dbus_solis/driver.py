@@ -13,6 +13,7 @@ from .mppt import MpptService
 from .mqtt_client import MQTTClient
 from .vebus import VebusService
 from .battery import BatteryService
+from .grid import GridService
 
 class SolisDriver:
     def __init__(self, config: AppConfig) -> None:
@@ -28,6 +29,7 @@ class SolisDriver:
         self._vebus = VebusService(config)
         self._mppt = MpptService(config)
         self._battery = BatteryService(config)
+        self._grid = GridService(config)
 
         self._mqtt = MQTTClient(
             config=config.mqtt,
@@ -57,7 +59,7 @@ class SolisDriver:
         self._vebus.set_connected(False)
         self._mppt.set_connected(False)
         self._battery.set_connected(False)
-
+        self._grid.set_connected(False)
         self._log.info("dbus-solis driver stopped")
 
     def _enqueue_message(
@@ -126,6 +128,11 @@ class SolisDriver:
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
+            self._grid.update(
+                data=newest.vebus.grid,
+                connected=newest.connected,
+                last_update=newest.timestamp,
+            )
 
             self._last_update = time.monotonic()
 
@@ -151,5 +158,5 @@ class SolisDriver:
             self._vebus.set_connected(False)
             self._mppt.set_connected(False)
             self._battery.set_connected(False)
-
+            self._grid.set_connected(False)
         return True
