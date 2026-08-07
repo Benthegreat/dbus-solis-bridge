@@ -47,6 +47,20 @@ fi
 echo "Creating service link..."
 ln -s "$APP_DIR/service" "$SERVICE_LINK"
 
+echo "Waiting for Venus OS service supervisor..."
+
+COUNT=0
+
+while [ ! -d "$SERVICE_LINK/supervise" ]; do
+    sleep 1
+    COUNT=$((COUNT + 1))
+
+    if [ "$COUNT" -ge 10 ]; then
+        echo "Error: service supervisor did not detect dbus-solis."
+        exit 1
+    fi
+done
+
 echo "Starting dbus-solis..."
 svc -u "$SERVICE_LINK"
 
