@@ -24,7 +24,12 @@ def main():
     print("PV Voltage:", system.mppt.pv.voltage)
 
     print("PV Yield:", system.mppt.yield_data.system)
-
+    print("Battery SOH:", system.battery.soh)
+    print("Battery Temp:", system.battery.temperature)
+    print(
+        "Battery Max Charge Current:",
+        system.battery.max_charge_current,
+    )
 
 if __name__ == "__main__":
     main()

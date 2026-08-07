@@ -1,5 +1,15 @@
 {
   "connected": true,
+  "battery": {
+    "soc": 83.0,
+    "soh": 100.0,
+    "voltage": 53.4,
+    "current": 2.3,
+    "power": 122.0,
+    "temperature": 32.0,
+    "max_charge_current": 290.0,
+    "max_discharge_current": 290.0
+  },
   "vebus": {
     "state": 9,
     "mode": 3,

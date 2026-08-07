@@ -115,14 +115,14 @@ class SolisDriver:
                 last_update=newest.timestamp,
             )
             self._battery.update(
-                soc=newest.vebus.soc,
-                soh=100.0,
-                voltage=newest.vebus.dc.voltage,
-                current=newest.vebus.dc.current,
-                power=newest.vebus.dc.power,
-                temperature=0.0,
-                max_charge_current=0.0,
-                max_discharge_current=0.0,
+                soc=newest.battery.soc,
+                soh=newest.battery.soh,
+                voltage=newest.battery.voltage,
+                current=newest.battery.current,
+                power=newest.battery.power,
+                temperature=newest.battery.temperature,
+                max_charge_current=newest.battery.max_charge_current,
+                max_discharge_current=newest.battery.max_discharge_current,
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )

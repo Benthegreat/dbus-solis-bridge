@@ -147,6 +147,7 @@ class MpptData:
 class SystemData:
     timestamp: str
     connected: bool
+    battery: BatteryData
     vebus: VebusData
     mppt: MpptData
 
@@ -158,6 +159,41 @@ class SystemData:
         return cls(
             timestamp=str(data.get("timestamp", "")),
             connected=bool(data.get("connected", True)),
-            vebus=VebusData.from_dict(data.get("vebus", {})),
-            mppt=MpptData.from_dict(data.get("mppt", {})),
+            battery=BatteryData.from_dict(
+                data.get("battery", {})
+            ),
+            vebus=VebusData.from_dict(
+                data.get("vebus", {})
+            ),
+            mppt=MpptData.from_dict(
+                data.get("mppt", {})
+            ),
+        )
+        
+@dataclass(frozen=True)
+class BatteryData:
+    soc: float
+    soh: float
+    voltage: float
+    current: float
+    power: float
+    temperature: float
+    max_charge_current: float
+    max_discharge_current: float
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "BatteryData":
+        return cls(
+            soc=_to_float(data.get("soc")),
+            soh=_to_float(data.get("soh"), 100.0),
+            voltage=_to_float(data.get("voltage")),
+            current=_to_float(data.get("current")),
+            power=_to_float(data.get("power")),
+            temperature=_to_float(data.get("temperature")),
+            max_charge_current=_to_float(
+                data.get("max_charge_current")
+            ),
+            max_discharge_current=_to_float(
+                data.get("max_discharge_current")
+            ),
         )
