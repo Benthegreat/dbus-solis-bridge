@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -7,13 +6,14 @@ import time
 
 from gi.repository import GLib
 
+from .battery import BatteryService
 from .config import AppConfig
+from .grid import GridService
 from .models import SystemData
 from .mppt import MpptService
 from .mqtt_client import MQTTClient
 from .vebus import VebusService
-from .battery import BatteryService
-from .grid import GridService
+
 
 class SolisDriver:
     def __init__(self, config: AppConfig) -> None:
@@ -60,6 +60,7 @@ class SolisDriver:
         self._mppt.set_connected(False)
         self._battery.set_connected(False)
         self._grid.set_connected(False)
+
         self._log.info("dbus-solis driver stopped")
 
     def _enqueue_message(
@@ -105,6 +106,9 @@ class SolisDriver:
             return True
 
         try:
+            # MQTT is the normalized/canonical data source. Any Solis-specific
+            # sign conversion should happen in the publisher (Home Assistant),
+            # so all D-Bus services consume the same power-flow convention.
             self._vebus.update(
                 data=newest.vebus,
                 connected=newest.connected,
@@ -116,6 +120,7 @@ class SolisDriver:
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
+
             self._battery.update(
                 soc=newest.battery.soc,
                 soh=newest.battery.soh,
@@ -128,6 +133,7 @@ class SolisDriver:
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
+
             self._grid.update(
                 data=newest.vebus.grid,
                 connected=newest.connected,
@@ -159,4 +165,5 @@ class SolisDriver:
             self._mppt.set_connected(False)
             self._battery.set_connected(False)
             self._grid.set_connected(False)
+
         return True
