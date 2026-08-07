@@ -1,0 +1,32 @@
+name: Test dbus-solis
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile Python
+        run: |
+          python -m compileall dbus_solis dbus_solis.py
+
+      - name: Run model test
+        run: |
+          python -m tests.test_models
