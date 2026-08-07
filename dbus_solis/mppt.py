@@ -105,7 +105,11 @@ class MpptService:
             0.0,
             format_kwh,
         )
-
+        self._add_path(
+            "/Yield/User",
+            0.0,
+            format_kwh,
+        )
         self._add_path(
             "/Dc/0/Voltage",
             0.0,
@@ -141,9 +145,6 @@ class MpptService:
         self.service["/State"] = data.state
         self.service["/ErrorCode"] = data.error_code
         self.service["/Mode"] = data.mode
-        self.service["/Yield/User"] = (
-            data.yield_data.system
-        )
         self.service["/Pv/V"] = data.pv.voltage
         self.service["/Pv/I"] = data.pv.current
         self.service["/Bridge/LastUpdate"] = last_update
@@ -153,11 +154,10 @@ class MpptService:
         self.service["/Yield/System"] = (
             data.yield_data.system
         )
-        self._add_path(
-            "/Yield/User",
-            0.0,
-            format_kwh,
+        self.service["/Yield/User"] = (
+            data.yield_data.system
         )
+
         self.service["/Dc/0/Voltage"] = (
             data.dc.voltage
         )

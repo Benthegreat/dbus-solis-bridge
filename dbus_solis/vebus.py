@@ -85,7 +85,7 @@ class VebusService:
 
         self._add_path("/Connected", 0)
         self._add_path("/UpdateIndex", 0)
-
+        self._add_path("/Bridge/LastUpdate", "never")
         self._add_path("/State", STATE_EXTERNAL_CONTROL)
         self._add_path("/Mode", 3)
         self._add_path("/VebusError", 0)
@@ -197,7 +197,7 @@ class VebusService:
 
     def set_connected(self, connected: bool) -> None:
         self.service["/Connected"] = int(connected)
-        self._add_path( "/Bridge/LastUpdate", "never",)
+        
 
     def update(
         self,
@@ -260,7 +260,7 @@ class VebusService:
         self.service["/UpdateIndex"] = (
             int(self.service["/UpdateIndex"]) + 1
         ) % 256
-        self._add_path( "/Bridge/LastUpdate", "never",)
+        
 
     def _update_ac_group(
         self,
