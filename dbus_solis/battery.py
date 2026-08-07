@@ -47,7 +47,10 @@ class BatteryService:
         self._add_path("/Mgmt/ProcessVersion", "0.2.0-dev")
         self._add_path("/Mgmt/Connection", "MQTT")
 
-        self._add_path("/DeviceInstance", 262)
+        self._add_path(
+            "/DeviceInstance",
+            self._config.devices.battery,
+        )
         self._add_path("/ProductId", 0xFFFF)
         self._add_path("/ProductName", "Solis Virtual Battery")
         self._add_path("/CustomName", "Solis Battery")

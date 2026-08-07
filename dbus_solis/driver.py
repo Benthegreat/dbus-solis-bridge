@@ -12,7 +12,7 @@ from .models import SystemData
 from .mppt import MpptService
 from .mqtt_client import MQTTClient
 from .vebus import VebusService
-
+from .battery import BatteryService
 
 class SolisDriver:
     def __init__(self, config: AppConfig) -> None:
@@ -27,6 +27,7 @@ class SolisDriver:
 
         self._vebus = VebusService(config)
         self._mppt = MpptService(config)
+        self._battery = BatteryService(config)
 
         self._mqtt = MQTTClient(
             config=config.mqtt,
@@ -55,6 +56,7 @@ class SolisDriver:
 
         self._vebus.set_connected(False)
         self._mppt.set_connected(False)
+        self._battery.set_connected(False)
 
         self._log.info("dbus-solis driver stopped")
 
@@ -112,6 +114,18 @@ class SolisDriver:
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
+            self._battery.update(
+                soc=newest.vebus.soc,
+                soh=100.0,
+                voltage=newest.vebus.dc.voltage,
+                current=newest.vebus.dc.current,
+                power=newest.vebus.dc.power,
+                temperature=0.0,
+                max_charge_current=0.0,
+                max_discharge_current=0.0,
+                connected=newest.connected,
+                last_update=newest.timestamp,
+            )
 
             self._last_update = time.monotonic()
 
@@ -136,5 +150,6 @@ class SolisDriver:
         if stale:
             self._vebus.set_connected(False)
             self._mppt.set_connected(False)
+            self._battery.set_connected(False)
 
         return True

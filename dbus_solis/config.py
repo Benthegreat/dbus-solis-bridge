@@ -25,6 +25,7 @@ class MQTTConfig:
 class DeviceInstances:
     vebus: int
     mppt: int
+    battery: int
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,9 @@ def load_config(path: str = DEFAULT_CONFIG) -> AppConfig:
         devices=DeviceInstances(
             vebus=int(raw["device_instances"]["vebus"]),
             mppt=int(raw["device_instances"]["mppt"]),
+            battery=int(
+                raw["device_instances"].get("battery", 262)
+            ),
         ),
         stale_timeout=int(
             raw.get("stale_timeout_seconds", 10)
