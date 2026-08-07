@@ -104,11 +104,13 @@ class SolisDriver:
             self._vebus.update(
                 data=newest.vebus,
                 connected=newest.connected,
+                last_update=newest.timestamp,
             )
 
             self._mppt.update(
                 data=newest.mppt,
                 connected=newest.connected,
+                last_update=newest.timestamp,
             )
 
             self._last_update = time.monotonic()

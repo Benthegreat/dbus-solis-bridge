@@ -145,6 +145,7 @@ class MpptData:
 
 @dataclass(frozen=True)
 class SystemData:
+    timestamp: str
     connected: bool
     vebus: VebusData
     mppt: MpptData
@@ -155,6 +156,7 @@ class SystemData:
             raise ValueError("MQTT payload must be a JSON object")
 
         return cls(
+            timestamp=str(data.get("timestamp", "")),
             connected=bool(data.get("connected", True)),
             vebus=VebusData.from_dict(data.get("vebus", {})),
             mppt=MpptData.from_dict(data.get("mppt", {})),

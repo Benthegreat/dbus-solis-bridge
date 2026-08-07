@@ -133,19 +133,20 @@ class MpptService:
         self,
         data: MpptData,
         connected: bool,
-        self.service["/Yield/User"] = (
-            data.yield_data.system
-        )
+        last_update: str,
+        
     ) -> None:
         self.service["/Connected"] = int(connected)
 
         self.service["/State"] = data.state
         self.service["/ErrorCode"] = data.error_code
         self.service["/Mode"] = data.mode
-
+        self.service["/Yield/User"] = (
+            data.yield_data.system
+        )
         self.service["/Pv/V"] = data.pv.voltage
         self.service["/Pv/I"] = data.pv.current
-
+        self.service["/Bridge/LastUpdate"] = last_update
         self.service["/Yield/Power"] = (
             data.yield_data.power
         )

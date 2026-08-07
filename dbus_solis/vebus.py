@@ -203,9 +203,10 @@ class VebusService:
         self,
         data: VebusData,
         connected: bool,
+        last_update: str,
     ) -> None:
         self.service["/Connected"] = int(connected)
-
+        self.service["/Bridge/LastUpdate"] = last_update
         self.service["/State"] = data.state
         self.service["/Mode"] = data.mode
         self.service["/VebusError"] = data.vebus_error
