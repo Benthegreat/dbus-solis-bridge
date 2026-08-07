@@ -121,6 +121,10 @@ class MpptService:
             0.0,
             format_watts,
         )
+        self._add_path(
+            "/Bridge/LastUpdate",
+            "never",
+        )
 
     def set_connected(self, connected: bool) -> None:
         self.service["/Connected"] = int(connected)
@@ -129,6 +133,9 @@ class MpptService:
         self,
         data: MpptData,
         connected: bool,
+        self.service["/Yield/User"] = (
+            data.yield_data.system
+        )
     ) -> None:
         self.service["/Connected"] = int(connected)
 
@@ -145,7 +152,11 @@ class MpptService:
         self.service["/Yield/System"] = (
             data.yield_data.system
         )
-
+        self._add_path(
+            "/Yield/User",
+            0.0,
+            format_kwh,
+        )
         self.service["/Dc/0/Voltage"] = (
             data.dc.voltage
         )

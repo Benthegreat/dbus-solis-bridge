@@ -182,7 +182,9 @@ class VebusService:
             "GridLost",
             "HighDcVoltage",
             "LowBattery",
+            "LowDcVoltage",
             "Overload",
+            "HighTemperature",
             "OverTemperature",
             "Ripple",
             "TemperatureSensor",
@@ -195,6 +197,7 @@ class VebusService:
 
     def set_connected(self, connected: bool) -> None:
         self.service["/Connected"] = int(connected)
+        self._add_path( "/Bridge/LastUpdate", "never",)
 
     def update(
         self,
@@ -215,17 +218,21 @@ class VebusService:
         self.service["/Ac/ActiveIn/ActiveInput"] = (
             data.active_input
         )
-
+        
         grid_connected = (
-            data.grid.l1.voltage > 80
-            and data.grid.l2.voltage > 80
+            data.active_input != 240
+            and (
+                data.grid.l1.voltage > 50
+                or data.grid.l2.voltage > 50
+            )
         )
 
         self.service["/Ac/ActiveIn/Connected"] = int(
             grid_connected
         )
         self.service["/Alarms/GridLost"] = int(
-            not grid_connected
+             0 if grid_connected else 2
+
         )
 
         self.service["/Ac/ActiveIn/P"] = (
@@ -252,6 +259,7 @@ class VebusService:
         self.service["/UpdateIndex"] = (
             int(self.service["/UpdateIndex"]) + 1
         ) % 256
+        self._add_path( "/Bridge/LastUpdate", "never",)
 
     def _update_ac_group(
         self,
