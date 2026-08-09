@@ -144,12 +144,31 @@ class MpptData:
 
 
 @dataclass(frozen=True)
+class AcPvData:
+    connected: bool
+    position: int
+    power: float
+    energy_today: float
+    energy_total: float
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "AcPvData":
+        return cls(
+            connected=bool(data.get("connected", True)),
+            position=_to_int(data.get("position"), 0),
+            power=_to_float(data.get("power")),
+            energy_today=_to_float(data.get("energy_today")),
+            energy_total=_to_float(data.get("energy_total")),
+        )
+
+@dataclass(frozen=True)
 class SystemData:
     timestamp: str
     connected: bool
     battery: BatteryData
     vebus: VebusData
     mppt: MpptData
+    ac_pv: AcPvData
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SystemData":
@@ -167,6 +186,9 @@ class SystemData:
             ),
             mppt=MpptData.from_dict(
                 data.get("mppt", {})
+            ),
+            ac_pv=AcPvData.from_dict(
+                data.get("ac_pv", {})
             ),
         )
         

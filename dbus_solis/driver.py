@@ -13,6 +13,7 @@ from .mppt import MpptService
 from .mqtt_client import MQTTClient
 from .vebus import VebusService
 from .battery import BatteryService
+from .pvinverter import PvInverterService
 
 class SolisDriver:
     def __init__(self, config: AppConfig) -> None:
