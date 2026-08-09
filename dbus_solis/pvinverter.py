@@ -44,7 +44,10 @@ class PvInverterService:
         self._add_path("/Mgmt/Connection", "MQTT")
 
         # Temporary unique instance until we add it to config.py.
-        self._add_path("/DeviceInstance", 40)
+        self._add_path(
+            "/DeviceInstance",
+            config.pvinverter_device_instance,
+        )
 
         self._add_path("/ProductId", 0xFFFF)
         self._add_path(
