@@ -9,7 +9,7 @@ from gi.repository import GLib
 from .battery import BatteryService
 from .config import AppConfig
 from .grid import GridService
-from .models import SystemData
+from .models import DcData, SystemData, VebusData
 from .mppt import MpptService
 from .mqtt_client import MQTTClient
 from .vebus import VebusService
@@ -110,7 +110,20 @@ class SolisDriver:
             # sign conversion should happen in the publisher (Home Assistant),
             # so all D-Bus services consume the same power-flow convention.
             self._vebus.update(
-                data=newest.vebus,
+                data=VebusData(
+                    state=newest.vebus.state,
+                    mode=newest.vebus.mode,
+                    vebus_error=newest.vebus.vebus_error,
+                    soc=newest.battery.soc,
+                    active_input=newest.vebus.active_input,
+                    dc=DcData(
+                        voltage=newest.battery.voltage,
+                        current=newest.battery.current,
+                        power=newest.battery.power,
+                    ),
+                    grid=newest.vebus.grid,
+                    out=newest.vebus.out,
+                ),
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
