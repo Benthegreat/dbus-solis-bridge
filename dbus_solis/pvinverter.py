@@ -73,7 +73,11 @@ class PvInverterService:
         self._add_path("/ErrorCode", 0)
 
         self._add_path("/Ac/Power", 0.0, format_watts)
+        self._add_path("/Ac/L1/Voltage", 0.0)
+        self._add_path("/Ac/L2/Voltage", 0.0)
 
+        self._add_path("/Ac/L1/Power", 0.0, format_watts)
+        self._add_path("/Ac/L2/Power", 0.0, format_watts)
         # Total produced AC energy.
         self._add_path("/Ac/Energy/Forward", 0.0)
 
@@ -96,10 +100,16 @@ class PvInverterService:
         self.service["/Connected"] = int(is_connected)
         self.service["/Position"] = data.position
 
-        self.service["/Ac/Power"] = data.power
+        self.service["/Ac/L1/Voltage"] = data.l1_voltage
+        self.service["/Ac/L2/Voltage"] = data.l2_voltage
+
+        self.service["/Ac/L1/Power"] = data.l1_power
+        self.service["/Ac/L2/Power"] = data.l2_power
+        total_power = data.l1_power + data.l2_power
+        self.service["/Ac/Power"] = total_power
         self.service["/Ac/Energy/Forward"] = data.energy_total
 
-        self.service["/Yield/Power"] = data.power
+        self.service["/Yield/Power"] = total_power
         self.service["/Yield/User"] = data.energy_today
         self.service["/Yield/System"] = data.energy_total
 

@@ -171,15 +171,30 @@ class AcPvData:
     connected: bool
     position: int
     power: float
+    l1_voltage: float
+    l2_voltage: float
+
+    l1_power: float
+    l2_power: float
+
     energy_today: float
     energy_total: float
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AcPvData":
+        l1 = data.get("l1", {})
+        l2 = data.get("l2", {})
+
         return cls(
-            connected=bool(data.get("connected", True)),
-            position=_to_int(data.get("position"), 0),
+            connected=bool(data.get("connected", False)),
+            position=_to_int(data.get("position")),
             power=_to_float(data.get("power")),
+
+            l1_voltage=_to_float(l1.get("voltage")),
+            l2_voltage=_to_float(l2.get("voltage")),
+
+            l1_power=_to_float(l1.get("power")),
+            l2_power=_to_float(l2.get("power")),
+
             energy_today=_to_float(data.get("energy_today")),
             energy_total=_to_float(data.get("energy_total")),
         )
