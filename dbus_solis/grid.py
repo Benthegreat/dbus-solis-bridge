@@ -68,6 +68,8 @@ class GridService:
         self._add_path("/Position", 0)
 
         self._add_path("/Ac/Power", 0.0, format_watts)
+        self._add_path("/Ac/Energy/Forward", 0.0)
+        self._add_path("/Ac/Energy/Reverse", 0.0)
 
         for phase in ("L1", "L2"):
             self._add_path(
@@ -102,6 +104,8 @@ class GridService:
     ) -> None:
         self.service["/Connected"] = int(connected)
         self.service["/Ac/Power"] = data.total_power
+        self.service["/Ac/Energy/Forward"] = data.energy_forward
+        self.service["/Ac/Energy/Reverse"] = data.energy_reverse
 
         for name, phase in (
             ("L1", data.l1),

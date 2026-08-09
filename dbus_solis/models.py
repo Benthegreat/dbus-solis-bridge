@@ -52,6 +52,8 @@ class DcData:
 class AcData:
     frequency: float
     total_power: float
+    energy_forward: float
+    energy_reverse: float
     l1: PhaseData
     l2: PhaseData
 
@@ -65,6 +67,13 @@ class AcData:
             total_power=_to_float(
                 data.get("total_power"),
                 l1.power + l2.power,
+            ),
+            energy_forward=_to_float(
+                data.get("energy_from_grid")
+            ),
+
+            energy_reverse=_to_float(
+                data.get("energy_to_grid")
             ),
             l1=l1,
             l2=l2,
@@ -81,6 +90,7 @@ class VebusData:
     dc: DcData
     grid: AcData
     out: AcData
+    energy: VebusEnergy
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "VebusData":
@@ -93,8 +103,21 @@ class VebusData:
             dc=DcData.from_dict(data.get("dc", {})),
             grid=AcData.from_dict(data.get("grid", {})),
             out=AcData.from_dict(data.get("out", {})),
+            energy=VebusEnergy.from_dict(data.get("energy", {})),
         )
+@dataclass(frozen=True)
+class VebusEnergy:
+    ac_in_to_inverter: float
+    inverter_to_ac_in: float
+    inverter_to_ac_out: float
 
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            ac_in_to_inverter=_to_float(data.get("ac_in_to_inverter")),
+            inverter_to_ac_in=_to_float(data.get("inverter_to_ac_in")),
+            inverter_to_ac_out=_to_float(data.get("inverter_to_ac_out")),
+        )
 
 @dataclass(frozen=True)
 class PvData:
@@ -148,6 +171,7 @@ class SystemData:
     timestamp: str
     connected: bool
     battery: BatteryData
+    grid: AcData
     vebus: VebusData
     mppt: MpptData
 
@@ -162,14 +186,17 @@ class SystemData:
             battery=BatteryData.from_dict(
                 data.get("battery", {})
             ),
+            grid=AcData.from_dict(
+                data.get("grid", {})
+            ),
             vebus=VebusData.from_dict(
-                data.get("vebus", {})
+                data.get("vebus", {}),
             ),
             mppt=MpptData.from_dict(
                 data.get("mppt", {})
             ),
         )
-        
+
 @dataclass(frozen=True)
 class BatteryData:
     soc: float

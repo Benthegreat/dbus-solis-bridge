@@ -118,6 +118,10 @@ class VebusService:
             0.0,
             format_watts,
         )
+        # Lifetime energy counters
+        self._add_path("/Energy/AcIn1ToInverter", 0.0)
+        self._add_path("/Energy/InverterToAcIn1", 0.0)
+        self._add_path("/Energy/InverterToAcOut", 0.0)
 
         for phase in ("L1", "L2"):
             self._add_path(
@@ -242,7 +246,17 @@ class VebusService:
         self.service["/Ac/Out/P"] = (
             data.out.total_power
         )
+        self.service["/Energy/AcIn1ToInverter"] = (
+            data.energy.ac_in_to_inverter
+        )
 
+        self.service["/Energy/InverterToAcIn1"] = (
+            data.energy.inverter_to_ac_in
+        )
+
+        self.service["/Energy/InverterToAcOut"] = (
+            data.energy.inverter_to_ac_out
+        )
         self._update_ac_group(
             base="/Ac/ActiveIn",
             frequency=data.grid.frequency,

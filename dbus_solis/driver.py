@@ -123,6 +123,7 @@ class SolisDriver:
                     ),
                     grid=newest.vebus.grid,
                     out=newest.vebus.out,
+                    energy=newest.vebus.energy,
                 ),
                 connected=newest.connected,
                 last_update=newest.timestamp,
@@ -148,7 +149,7 @@ class SolisDriver:
             )
 
             self._grid.update(
-                data=newest.vebus.grid,
+                data=newest.grid,
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
