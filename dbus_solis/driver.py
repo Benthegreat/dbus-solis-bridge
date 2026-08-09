@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -7,13 +6,14 @@ import time
 
 from gi.repository import GLib
 
+from .battery import BatteryService
 from .config import AppConfig
-from .models import SystemData
+from .grid import GridService
+from .models import SystemData, VebusData
 from .mppt import MpptService
 from .mqtt_client import MQTTClient
-from .vebus import VebusService
-from .battery import BatteryService
 from .pvinverter import PvInverterService
+from .vebus import VebusService
 
 class SolisDriver:
     def __init__(self, config: AppConfig) -> None:
@@ -29,6 +29,8 @@ class SolisDriver:
         self._vebus = VebusService(config)
         self._mppt = MpptService(config)
         self._battery = BatteryService(config)
+        self._grid = GridService(config)
+        self._pvinverter = PvInverterService(config)
 
         self._mqtt = MQTTClient(
             config=config.mqtt,
@@ -58,7 +60,8 @@ class SolisDriver:
         self._vebus.set_connected(False)
         self._mppt.set_connected(False)
         self._battery.set_connected(False)
-
+        self._grid.set_connected(False)
+        self._pvinverter.set_connected(False)
         self._log.info("dbus-solis driver stopped")
 
     def _enqueue_message(
@@ -104,8 +107,21 @@ class SolisDriver:
             return True
 
         try:
+            # MQTT is the normalized/canonical data source. Any Solis-specific
+            # sign conversion should happen in the publisher (Home Assistant),
+            # so all D-Bus services consume the same power-flow convention.
             self._vebus.update(
-                data=newest.vebus,
+                data=VebusData(
+                    state=newest.vebus.state,
+                    mode=newest.vebus.mode,
+                    vebus_error=newest.vebus.vebus_error,
+                    soc=newest.battery.soc,
+                    active_input=newest.vebus.active_input,
+                    dc=newest.vebus.dc,
+                    grid=newest.vebus.grid,
+                    out=newest.vebus.out,
+                    energy=newest.vebus.energy,
+                ),
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
@@ -115,6 +131,7 @@ class SolisDriver:
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
+
             self._battery.update(
                 soc=newest.battery.soc,
                 soh=newest.battery.soh,
@@ -124,6 +141,17 @@ class SolisDriver:
                 temperature=newest.battery.temperature,
                 max_charge_current=newest.battery.max_charge_current,
                 max_discharge_current=newest.battery.max_discharge_current,
+                connected=newest.connected,
+                last_update=newest.timestamp,
+            )
+
+            self._grid.update(
+                data=newest.grid,
+                connected=newest.connected,
+                last_update=newest.timestamp,
+            )
+            self._pvinverter.update(
+                data=newest.ac_pv,
                 connected=newest.connected,
                 last_update=newest.timestamp,
             )
@@ -152,5 +180,7 @@ class SolisDriver:
             self._vebus.set_connected(False)
             self._mppt.set_connected(False)
             self._battery.set_connected(False)
+            self._grid.set_connected(False)
+            self._pvinverter.set_connected(False)
 
         return True

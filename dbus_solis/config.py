@@ -26,6 +26,7 @@ class DeviceInstances:
     vebus: int
     mppt: int
     battery: int
+    grid: int
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,9 @@ def load_config(path: str = DEFAULT_CONFIG) -> AppConfig:
             battery=int(
                 raw["device_instances"].get("battery", 262)
             ),
+            grid=int(
+                raw["device_instances"].get("grid", 263)
+    ),
         ),
         stale_timeout=int(
             raw.get("stale_timeout_seconds", 10)

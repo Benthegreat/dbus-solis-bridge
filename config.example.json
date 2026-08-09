@@ -10,7 +10,8 @@
   "device_instances": {
     "vebus": 260,
     "mppt": 261,
-    "battery": 262
+    "battery": 262,
+    "grid": 263
   },
 
   "identity": {
