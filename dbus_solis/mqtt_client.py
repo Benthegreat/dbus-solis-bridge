@@ -251,19 +251,30 @@ class MQTTClient:
             self._config.topic,
         )
 
-        last_io = time.monotonic()
+        # MQTT keepalive is based on client transmit activity, not receive
+        # activity. Incoming telemetry does not satisfy the broker keepalive.
+        last_tx = time.monotonic()
+        ping_sent_at: float | None = None
 
         while not self._stop_event.is_set():
             try:
                 packet_type, body = self._read_packet(sock)
-                last_io = time.monotonic()
             except socket.timeout:
+                now = time.monotonic()
+
                 if (
-                    time.monotonic() - last_io
-                    >= self._config.keepalive / 2
+                    ping_sent_at is not None
+                    and now - ping_sent_at >= self._config.keepalive
+                ):
+                    raise TimeoutError("MQTT PINGRESP timeout")
+
+                if (
+                    ping_sent_at is None
+                    and now - last_tx >= self._config.keepalive / 2
                 ):
                     sock.sendall(b"\xC0\x00")
-                    last_io = time.monotonic()
+                    last_tx = now
+                    ping_sent_at = now
 
                 continue
 
@@ -273,7 +284,8 @@ class MQTTClient:
                 self._handle_publish(body)
 
             elif packet_kind == 13:
-                continue
+                # PINGRESP
+                ping_sent_at = None
 
     def _run(self) -> None:
         reconnect_delay = 1
