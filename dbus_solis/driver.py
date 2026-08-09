@@ -116,11 +116,7 @@ class SolisDriver:
                     vebus_error=newest.vebus.vebus_error,
                     soc=newest.battery.soc,
                     active_input=newest.vebus.active_input,
-                    dc=DcData(
-                        voltage=newest.battery.voltage,
-                        current=newest.battery.current,
-                        power=newest.battery.power,
-                    ),
+                    dc=newest.vebus.dc,
                     grid=newest.vebus.grid,
                     out=newest.vebus.out,
                     energy=newest.vebus.energy,
