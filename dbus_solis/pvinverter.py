@@ -46,7 +46,7 @@ class PvInverterService:
         # Temporary unique instance until we add it to config.py.
         self._add_path(
             "/DeviceInstance",
-            self._config.pvinverter_device_instance,
+            self._config.devices.pvinverter,
         )
 
         self._add_path("/ProductId", 0xFFFF)

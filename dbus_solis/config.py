@@ -27,7 +27,7 @@ class DeviceInstances:
     mppt: int
     battery: int
     grid: int
-
+    pvinverter: int
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -81,7 +81,10 @@ def load_config(path: str = DEFAULT_CONFIG) -> AppConfig:
             ),
             grid=int(
                 raw["device_instances"].get("grid", 263)
-    ),
+            ),
+            pvinverter=int(
+                raw["device_instances"].get("pvinverter", 40)
+            ),
         ),
         stale_timeout=int(
             raw.get("stale_timeout_seconds", 10)
