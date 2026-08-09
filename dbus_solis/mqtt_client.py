@@ -259,33 +259,36 @@ class MQTTClient:
         while not self._stop_event.is_set():
             try:
                 packet_type, body = self._read_packet(sock)
+                packet_kind = packet_type >> 4
+
+                if packet_kind == 3:
+                    self._handle_publish(body)
+
+                elif packet_kind == 13:
+                    # PINGRESP
+                    ping_sent_at = None
+
             except socket.timeout:
-                now = time.monotonic()
+                # A timeout is only an opportunity to run the keepalive check.
+                # Frequent incoming publishes may prevent socket.timeout from
+                # occurring, so the same check also runs after every packet.
+                pass
 
-                if (
-                    ping_sent_at is not None
-                    and now - ping_sent_at >= self._config.keepalive
-                ):
-                    raise TimeoutError("MQTT PINGRESP timeout")
+            now = time.monotonic()
 
-                if (
-                    ping_sent_at is None
-                    and now - last_tx >= self._config.keepalive / 2
-                ):
-                    sock.sendall(b"\xC0\x00")
-                    last_tx = now
-                    ping_sent_at = now
+            if (
+                ping_sent_at is not None
+                and now - ping_sent_at >= self._config.keepalive
+            ):
+                raise TimeoutError("MQTT PINGRESP timeout")
 
-                continue
-
-            packet_kind = packet_type >> 4
-
-            if packet_kind == 3:
-                self._handle_publish(body)
-
-            elif packet_kind == 13:
-                # PINGRESP
-                ping_sent_at = None
+            if (
+                ping_sent_at is None
+                and now - last_tx >= self._config.keepalive / 2
+            ):
+                sock.sendall(b"\xC0\x00")
+                last_tx = now
+                ping_sent_at = now
 
     def _run(self) -> None:
         reconnect_delay = 1
