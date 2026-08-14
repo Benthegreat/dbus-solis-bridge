@@ -26,11 +26,47 @@ class SolisDriver:
 
         self._last_update = 0.0
 
-        self._vebus = VebusService(config)
-        self._mppt = MpptService(config)
-        self._battery = BatteryService(config)
-        self._grid = GridService(config)
-        self._pvinverter = PvInverterService(config)
+        self._vebus = (
+            VebusService(config)
+            if config.enable_vebus
+            else None
+        )
+        self._mppt = (
+            MpptService(config)
+            if config.enable_internal_mppt
+            else None
+        )
+        self._battery = (
+            BatteryService(config)
+            if config.enable_battery
+            else None
+        )
+        self._grid = (
+            GridService(config)
+            if config.enable_grid
+            else None
+        )
+        self._pvinverter = (
+            PvInverterService(config)
+            if config.enable_ac_pv
+            else None
+        )
+
+        enabled = []
+        if self._vebus is not None:
+            enabled.append("vebus")
+        if self._mppt is not None:
+            enabled.append("internal_mppt")
+        if self._battery is not None:
+            enabled.append("battery")
+        if self._grid is not None:
+            enabled.append("grid")
+        if self._pvinverter is not None:
+            enabled.append("ac_pv")
+        self._log.info(
+            "Enabled D-Bus services: %s",
+            ", ".join(enabled) if enabled else "none",
+        )
 
         self._mqtt = MQTTClient(
             config=config.mqtt,
@@ -57,11 +93,15 @@ class SolisDriver:
     def stop(self) -> None:
         self._mqtt.stop()
 
-        self._vebus.set_connected(False)
-        self._mppt.set_connected(False)
-        self._battery.set_connected(False)
-        self._grid.set_connected(False)
-        self._pvinverter.set_connected(False)
+        for service in (
+            self._vebus,
+            self._mppt,
+            self._battery,
+            self._grid,
+            self._pvinverter,
+        ):
+            if service is not None:
+                service.set_connected(False)
         self._log.info("dbus-solis driver stopped")
 
     def _enqueue_message(
@@ -110,51 +150,57 @@ class SolisDriver:
             # MQTT is the normalized/canonical data source. Any Solis-specific
             # sign conversion should happen in the publisher (Home Assistant),
             # so all D-Bus services consume the same power-flow convention.
-            self._vebus.update(
-                data=VebusData(
-                    state=newest.vebus.state,
-                    mode=newest.vebus.mode,
-                    vebus_error=newest.vebus.vebus_error,
+            if self._vebus is not None:
+                self._vebus.update(
+                    data=VebusData(
+                        state=newest.vebus.state,
+                        mode=newest.vebus.mode,
+                        vebus_error=newest.vebus.vebus_error,
+                        soc=newest.battery.soc,
+                        active_input=newest.vebus.active_input,
+                        dc=newest.vebus.dc,
+                        grid=newest.vebus.grid,
+                        out=newest.vebus.out,
+                        energy=newest.vebus.energy,
+                    ),
+                    connected=newest.connected,
+                    last_update=newest.timestamp,
+                )
+
+            if self._mppt is not None:
+                self._mppt.update(
+                    data=newest.mppt,
+                    connected=newest.connected,
+                    last_update=newest.timestamp,
+                )
+
+            if self._battery is not None:
+                self._battery.update(
                     soc=newest.battery.soc,
-                    active_input=newest.vebus.active_input,
-                    dc=newest.vebus.dc,
-                    grid=newest.vebus.grid,
-                    out=newest.vebus.out,
-                    energy=newest.vebus.energy,
-                ),
-                connected=newest.connected,
-                last_update=newest.timestamp,
-            )
+                    soh=newest.battery.soh,
+                    voltage=newest.battery.voltage,
+                    current=newest.battery.current,
+                    power=newest.battery.power,
+                    temperature=newest.battery.temperature,
+                    max_charge_current=newest.battery.max_charge_current,
+                    max_discharge_current=newest.battery.max_discharge_current,
+                    connected=newest.connected,
+                    last_update=newest.timestamp,
+                )
 
-            self._mppt.update(
-                data=newest.mppt,
-                connected=newest.connected,
-                last_update=newest.timestamp,
-            )
+            if self._grid is not None:
+                self._grid.update(
+                    data=newest.grid,
+                    connected=newest.connected,
+                    last_update=newest.timestamp,
+                )
 
-            self._battery.update(
-                soc=newest.battery.soc,
-                soh=newest.battery.soh,
-                voltage=newest.battery.voltage,
-                current=newest.battery.current,
-                power=newest.battery.power,
-                temperature=newest.battery.temperature,
-                max_charge_current=newest.battery.max_charge_current,
-                max_discharge_current=newest.battery.max_discharge_current,
-                connected=newest.connected,
-                last_update=newest.timestamp,
-            )
-
-            self._grid.update(
-                data=newest.grid,
-                connected=newest.connected,
-                last_update=newest.timestamp,
-            )
-            self._pvinverter.update(
-                data=newest.ac_pv,
-                connected=newest.connected,
-                last_update=newest.timestamp,
-            )
+            if self._pvinverter is not None:
+                self._pvinverter.update(
+                    data=newest.ac_pv,
+                    connected=newest.connected,
+                    last_update=newest.timestamp,
+                )
 
             self._last_update = time.monotonic()
 
@@ -177,10 +223,14 @@ class SolisDriver:
             stale = age > self._config.stale_timeout
 
         if stale:
-            self._vebus.set_connected(False)
-            self._mppt.set_connected(False)
-            self._battery.set_connected(False)
-            self._grid.set_connected(False)
-            self._pvinverter.set_connected(False)
+            for service in (
+                self._vebus,
+                self._mppt,
+                self._battery,
+                self._grid,
+                self._pvinverter,
+            ):
+                if service is not None:
+                    service.set_connected(False)
 
         return True

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_CONFIG = "/data/dbus-solis/config.json"
+DEFAULT_CONFIG = "/data/dbus-solis-grid-dev/config.json"
 
 
 @dataclass(frozen=True)
@@ -35,6 +35,11 @@ class AppConfig:
     devices: DeviceInstances
     stale_timeout: int
     log_level: str
+    enable_vebus: bool
+    enable_internal_mppt: bool
+    enable_battery: bool
+    enable_grid: bool
+    enable_ac_pv: bool
 
 
 def load_config(path: str = DEFAULT_CONFIG) -> AppConfig:
@@ -90,4 +95,9 @@ def load_config(path: str = DEFAULT_CONFIG) -> AppConfig:
             raw.get("stale_timeout_seconds", 10)
         ),
         log_level=raw.get("log_level", "INFO").upper(),
+        enable_vebus=bool(raw.get("enable_vebus", True)),
+        enable_internal_mppt=bool(raw.get("enable_internal_mppt", True)),
+        enable_battery=bool(raw.get("enable_battery", True)),
+        enable_grid=bool(raw.get("enable_grid", True)),
+        enable_ac_pv=bool(raw.get("enable_ac_pv", False)),
     )

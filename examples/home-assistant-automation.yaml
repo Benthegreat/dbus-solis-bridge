@@ -1,0 +1,527 @@
+# dbus-solis-bridge Home Assistant MQTT Publisher
+#
+# This is an EXAMPLE configuration.
+# Replace the entity IDs in the variables section below with the
+# corresponding entities from your Solis integration.
+#
+# Power sign conventions expected by dbus-solis-bridge:
+#
+# Battery:
+#   Positive = charging
+#   Negative = discharging
+#
+# Grid:
+#   Positive = import
+#   Negative = export
+#
+# VE.Bus DC:
+#   Positive = rectifying / AC -> DC
+#   Negative = inverting / DC -> AC
+#
+# AC-coupled PV:
+#   Sign should be verified against your Solis firmware when producing.
+#
+# Recommended MQTT publish interval: 2 seconds.
+
+alias: Publish Solis telemetry to Cerbo GX
+description: Publish normalized Solis telemetry for dbus-solis
+
+triggers:
+  - trigger: time_pattern
+    seconds: /2
+
+conditions: []
+
+actions:
+
+  # ---------------------------------------------------------------------------
+  # ENTITY MAPPING
+  #
+  # Replace these example entity IDs with the entities created by your
+  # Home Assistant Solis integration.
+  # ---------------------------------------------------------------------------
+
+  - variables:
+
+      # Battery / BMS
+      battery_soc_entity: sensor.solis_battery_soc
+      battery_soh_entity: sensor.solis_battery_soh
+      battery_voltage_bms_entity: sensor.solis_battery_voltage_bms
+      battery_current_bms_entity: sensor.solis_battery_current_bms
+      battery_current_direction_entity: sensor.solis_battery_current_direction
+      battery_power_entity: sensor.solis_battery_power
+      battery_temperature_bms_entity: sensor.solis_battery_temperature_bms
+      battery_charge_limit_entity: sensor.solis_battery_charge_current_limitation_bms
+      battery_discharge_limit_entity: sensor.solis_battery_discharge_current_limitation_bms
+
+      # Solis DC bus / inverter conversion
+      battery_voltage_entity: sensor.solis_battery_voltage
+      inverting_rectifying_power_entity: sensor.solis_inverting_rectifying_power
+
+      # External grid meter
+      meter_frequency_entity: sensor.solis_meter_grid_frequency
+      meter_total_power_entity: sensor.solis_meter_total_active_power
+      meter_energy_from_grid_entity: sensor.solis_meter_total_active_energy_from_grid
+      meter_energy_to_grid_entity: sensor.solis_meter_total_active_energy_to_grid
+
+      meter_l1_voltage_entity: sensor.solis_meter_ac_voltage_a
+      meter_l1_current_entity: sensor.solis_meter_ac_current_a
+      meter_l1_power_entity: sensor.solis_meter_active_power_a
+
+      meter_l2_voltage_entity: sensor.solis_meter_ac_voltage_b
+      meter_l2_current_entity: sensor.solis_meter_ac_current_b
+      meter_l2_power_entity: sensor.solis_meter_active_power_b
+
+      # Solis AC grid port / VE.Bus AC input
+      inverter_grid_frequency_entity: sensor.solis_grid_frequency
+      inverter_grid_l1_voltage_entity: sensor.solis_a_phase_voltage
+      inverter_grid_l2_voltage_entity: sensor.solis_b_phase_voltage
+
+      inverter_grid_l1_power_entity: sensor.solis_ac_grid_port_active_power_phase_a
+      inverter_grid_l2_power_entity: sensor.solis_ac_grid_port_active_power_phase_b
+
+      # VE.Bus energy counters
+      ac_in_energy_consumption_entity: sensor.solis_ac_grid_port_total_energy_consumption
+      ac_in_energy_fed_in_entity: sensor.solis_ac_grid_port_total_energy_fed_in
+      backup_load_total_energy_entity: sensor.solis_backup_load_total_energy
+
+      # Backup / essential-load output
+      backup_frequency_entity: sensor.solis_backup_frequency_reference
+      backup_load_power_entity: sensor.solis_backup_load_power
+
+      backup_l1_voltage_entity: sensor.solis_backup_ac_voltage_phase_a
+      backup_l1_current_entity: sensor.solis_backup_ac_current_phase_a
+
+      backup_l2_voltage_entity: sensor.solis_backup_ac_voltage_phase_b
+      backup_l2_current_entity: sensor.solis_backup_ac_current_phase_b
+
+      # DC PV / MPPT
+      total_pv_power_entity: sensor.solis_total_pv_power
+      pv_total_energy_entity: sensor.solis_pv_total_energy_generation
+
+      pv1_voltage_entity: sensor.solis_pv_voltage_1
+      pv2_voltage_entity: sensor.solis_pv_voltage_2
+      pv3_voltage_entity: sensor.solis_pv_voltage_3
+      pv4_voltage_entity: sensor.solis_pv_voltage_4
+
+      pv1_current_entity: sensor.solis_pv_current_1
+      pv2_current_entity: sensor.solis_pv_current_2
+      pv3_current_entity: sensor.solis_pv_current_3
+      pv4_current_entity: sensor.solis_pv_current_4
+
+      # AC-coupled PV / GEN-Smart Port
+      ac_pv_l1_power_entity: sensor.solis_smart_port_phase_a_active_power
+      ac_pv_l2_power_entity: sensor.solis_smart_port_phase_b_active_power
+
+      ac_pv_total_power_entity: sensor.solis_ac_coupling_total_active_power
+      ac_pv_energy_today_entity: sensor.solis_ac_coupling_today_power_generation
+      ac_pv_energy_total_entity: sensor.solis_ac_coupling_total_power_generation
+
+  - action: mqtt.publish
+    data:
+      topic: solis/venus/update
+      qos: 0
+      retain: true
+
+      payload: |-
+        {# ------------------------------------------------------------------ #}
+        {# Normalize frequently reused values before creating the JSON.        #}
+        {# ------------------------------------------------------------------ #}
+
+        {% set battery_direction = states(battery_current_direction_entity) | int(0) %}
+
+        {#
+          Solis BMS current is normally an unsigned magnitude.
+          On the tested S6-EH2P:
+            direction 0 = charging
+            direction 1 = discharging
+        #}
+        {% set battery_sign = -1 if battery_direction == 1 else 1 %}
+
+        {% set battery_voltage =
+          states(battery_voltage_entity) | float(0)
+        %}
+
+        {#
+          Solis Inverting/Rectifying Power uses the opposite sign from the
+          Victron VE.Bus DC convention on the tested inverter.
+        #}
+        {% set inverter_dc_power =
+          -(states(inverting_rectifying_power_entity) | float(0))
+        %}
+
+        {#
+          Solis provides total real backup-load power but not separate
+          L1/L2 real-power registers on the tested model.
+
+          V x I is therefore used only to determine the phase loading ratio.
+          Total real power is then divided between phases using that ratio.
+        #}
+        {% set backup_l1_va =
+          (states(backup_l1_voltage_entity) | float(0))
+          *
+          (states(backup_l1_current_entity) | float(0))
+        %}
+
+        {% set backup_l2_va =
+          (states(backup_l2_voltage_entity) | float(0))
+          *
+          (states(backup_l2_current_entity) | float(0))
+        %}
+
+        {% set backup_total_va = backup_l1_va + backup_l2_va %}
+        {% set backup_real_power =
+          states(backup_load_power_entity) | float(0)
+        %}
+
+        {% if backup_total_va > 0 %}
+          {% set backup_l1_power =
+            backup_real_power * backup_l1_va / backup_total_va
+          %}
+          {% set backup_l2_power =
+            backup_real_power * backup_l2_va / backup_total_va
+          %}
+        {% else %}
+          {% set backup_l1_power = 0 %}
+          {% set backup_l2_power = 0 %}
+        {% endif %}
+
+        {
+          "timestamp": "{{ now().isoformat() }}",
+          "source": "home_assistant",
+          "connected": true,
+
+          "battery": {
+            "soc": {{
+              states(battery_soc_entity) | float(0)
+            }},
+
+            "soh": {{
+              states(battery_soh_entity) | float(0)
+            }},
+
+            "voltage": {{
+              states(battery_voltage_bms_entity) | float(0)
+            }},
+
+            "current": {{
+              (
+                (states(battery_current_bms_entity) | float(0))
+                * battery_sign
+              ) | round(2)
+            }},
+
+            "power": {{
+              (
+                (states(battery_power_entity) | float(0) | abs)
+                * battery_sign
+              ) | round(1)
+            }},
+
+            "temperature": {{
+              (
+                (
+                  (states(battery_temperature_bms_entity) | float(32))
+                  - 32
+                )
+                * 5 / 9
+              ) | round(1)
+            }},
+
+            "max_charge_current": {{
+              states(battery_charge_limit_entity) | float(0)
+            }},
+
+            "max_discharge_current": {{
+              states(battery_discharge_limit_entity) | float(0)
+            }}
+          },
+
+          "grid": {
+            "frequency": {{
+              states(meter_frequency_entity) | float(60)
+            }},
+
+            "total_power": {{
+              -(states(meter_total_power_entity) | float(0))
+            }},
+
+            "energy_from_grid": {{
+              states(meter_energy_from_grid_entity) | float(0)
+            }},
+
+            "energy_to_grid": {{
+              states(meter_energy_to_grid_entity) | float(0)
+            }},
+
+            "l1": {
+              "voltage": {{
+                states(meter_l1_voltage_entity) | float(0)
+              }},
+
+              "current": {{
+                states(meter_l1_current_entity) | float(0)
+              }},
+
+              "power": {{
+                -(states(meter_l1_power_entity) | float(0))
+              }}
+            },
+
+            "l2": {
+              "voltage": {{
+                states(meter_l2_voltage_entity) | float(0)
+              }},
+
+              "current": {{
+                states(meter_l2_current_entity) | float(0)
+              }},
+
+              "power": {{
+                -(states(meter_l2_power_entity) | float(0))
+              }}
+            }
+          },
+
+          "vebus": {
+            "state": 9,
+            "mode": 3,
+            "vebus_error": 0,
+
+            "soc": {{
+              states(battery_soc_entity) | float(0)
+            }},
+
+            "active_input": 0,
+
+            "energy": {
+              "ac_in_to_inverter": {{
+                states(ac_in_energy_consumption_entity) | float(0)
+              }},
+
+              "inverter_to_ac_in": {{
+                states(ac_in_energy_fed_in_entity) | float(0)
+              }},
+
+              "inverter_to_ac_out": {{
+                states(backup_load_total_energy_entity) | float(0)
+              }}
+            },
+
+            "dc": {
+              "voltage": {{
+                battery_voltage
+              }},
+
+              "current": {{
+                (
+                  inverter_dc_power
+                  /
+                  (battery_voltage if battery_voltage > 0 else 53.0)
+                ) | round(2)
+              }},
+
+              "power": {{
+                inverter_dc_power | round(1)
+              }}
+            },
+
+            "grid": {
+              "frequency": {{
+                states(inverter_grid_frequency_entity) | float(60)
+              }},
+
+              "total_power": {{
+                (
+                  -(states(inverter_grid_l1_power_entity) | float(0))
+                  -
+                  (states(inverter_grid_l2_power_entity) | float(0))
+                ) | round(1)
+              }},
+
+              "l1": {
+                "voltage": {{
+                  states(inverter_grid_l1_voltage_entity) | float(0)
+                }},
+
+                "current": {{
+                  (
+                    (
+                      states(inverter_grid_l1_power_entity)
+                      | float(0)
+                      | abs
+                    )
+                    /
+                    (
+                      states(inverter_grid_l1_voltage_entity)
+                      | float(120)
+                    )
+                  ) | round(2)
+                }},
+
+                "power": {{
+                  -(states(inverter_grid_l1_power_entity) | float(0))
+                }}
+              },
+
+              "l2": {
+                "voltage": {{
+                  states(inverter_grid_l2_voltage_entity) | float(0)
+                }},
+
+                "current": {{
+                  (
+                    (
+                      states(inverter_grid_l2_power_entity)
+                      | float(0)
+                      | abs
+                    )
+                    /
+                    (
+                      states(inverter_grid_l2_voltage_entity)
+                      | float(120)
+                    )
+                  ) | round(2)
+                }},
+
+                "power": {{
+                  -(states(inverter_grid_l2_power_entity) | float(0))
+                }}
+              }
+            },
+
+            "out": {
+              "frequency": {{
+                states(backup_frequency_entity) | float(60)
+              }},
+
+              "total_power": {{
+                backup_real_power
+              }},
+
+              "l1": {
+                "voltage": {{
+                  states(backup_l1_voltage_entity) | float(0)
+                }},
+
+                "current": {{
+                  states(backup_l1_current_entity) | float(0)
+                }},
+
+                "power": {{
+                  backup_l1_power | round(1)
+                }}
+              },
+
+              "l2": {
+                "voltage": {{
+                  states(backup_l2_voltage_entity) | float(0)
+                }},
+
+                "current": {{
+                  states(backup_l2_current_entity) | float(0)
+                }},
+
+                "power": {{
+                  backup_l2_power | round(1)
+                }}
+              }
+            }
+          },
+
+          "mppt": {
+            "state": {{
+              3
+              if states(total_pv_power_entity) | float(0) > 0
+              else 0
+            }},
+
+            "error_code": 0,
+            "mode": 1,
+
+            "pv": {
+              "voltage": {{
+                [
+                  states(pv1_voltage_entity) | float(0),
+                  states(pv2_voltage_entity) | float(0),
+                  states(pv3_voltage_entity) | float(0),
+                  states(pv4_voltage_entity) | float(0)
+                ] | max
+              }},
+
+              "current": {{
+                (
+                  states(pv1_current_entity) | float(0)
+                  +
+                  states(pv2_current_entity) | float(0)
+                  +
+                  states(pv3_current_entity) | float(0)
+                  +
+                  states(pv4_current_entity) | float(0)
+                ) | round(2)
+              }}
+            },
+
+            "yield": {
+              "power": {{
+                states(total_pv_power_entity) | float(0)
+              }},
+
+              "system": {{
+                states(pv_total_energy_entity) | float(0)
+              }}
+            },
+
+            "dc": {
+              "voltage": {{
+                battery_voltage
+              }},
+
+              "current": 0.0,
+
+              "power": {{
+                states(total_pv_power_entity) | float(0)
+              }}
+            }
+          },
+
+          "ac_pv": {
+            "connected": true,
+
+            "position": 1,
+
+            "l1": {
+              "voltage": {{
+                states(backup_l1_voltage_entity) | float(0)
+              }},
+
+              "power": {{
+                states(ac_pv_l1_power_entity) | float(0)
+              }}
+            },
+
+            "l2": {
+              "voltage": {{
+                states(backup_l2_voltage_entity) | float(0)
+              }},
+
+              "power": {{
+                states(ac_pv_l2_power_entity) | float(0)
+              }}
+            },
+
+            "power": {{
+              states(ac_pv_total_power_entity) | float(0)
+            }},
+
+            "energy_today": {{
+              states(ac_pv_energy_today_entity) | float(0)
+            }},
+
+            "energy_total": {{
+              states(ac_pv_energy_total_entity) | float(0)
+            }}
+          }
+        }
+
+mode: restart

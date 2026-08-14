@@ -1,6 +1,6 @@
 {
   "mqtt": {
-    "host": "192.168.14.214",
+    "host": "mqtt.local",
     "port": 1883,
     "topic": "solis/venus/update",
     "username": "",
@@ -14,6 +14,11 @@
     "grid": 263,
     "pvinverter": 40
   },
+  "enable_vebus": true,
+  "enable_internal_mppt": true,
+  "enable_battery": true,
+  "enable_grid": true,
+  "enable_ac_pv": false,
 
   "identity": {
     "vebus_product_name": "Solis S6-EH2P Virtual Dual Inverter",

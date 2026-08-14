@@ -58,11 +58,11 @@ class MpptService:
         )
         self._add_path(
             "/ProductName",
-            "Solis Virtual External MPPT",
+            "Solis Virtual Internal MPPT",
         )
         self._add_path(
             "/CustomName",
-            "Solis External MPPT",
+            "Solis Internal MPPT",
         )
         self._add_path(
             "/FirmwareVersion",
